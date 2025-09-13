@@ -19,6 +19,7 @@ class AuthProvider with ChangeNotifier {
 
   void _initializeAuth() {
     FirebaseService.authStateChanges.listen((firebase_auth.User? user) {
+      print('AuthProvider: 認証状態変更 - ${user?.uid}');
       if (user != null) {
         _loadUserData(user.uid);
       } else {
@@ -30,12 +31,17 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> _loadUserData(String uid) async {
     try {
+      print('AuthProvider: ユーザーデータ読み込み開始 - $uid');
       final doc = await FirebaseService.firestore.collection('users').doc(uid).get();
       if (doc.exists) {
         _user = app_user.User.fromMap(doc.data()!);
+        print('AuthProvider: ユーザーデータ読み込み成功 - ${_user?.efootballUsername}');
         notifyListeners();
+      } else {
+        print('AuthProvider: ユーザーデータが存在しません');
       }
     } catch (e) {
+      print('AuthProvider: ユーザーデータ読み込みエラー - $e');
       _errorMessage = 'ユーザーデータの読み込みに失敗しました: $e';
       notifyListeners();
     }
@@ -71,19 +77,23 @@ class AuthProvider with ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    print('AuthProvider: ログイン開始 - $email');
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      print('AuthProvider: FirebaseService.signInWithEmailAndPassword呼び出し');
       await FirebaseService.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print('AuthProvider: ログイン成功');
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
+      print('AuthProvider: ログインエラー - $e');
       _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();

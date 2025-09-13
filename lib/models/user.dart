@@ -28,9 +28,35 @@ class User {
       id: map['id'] ?? '',
       email: map['email'] ?? '',
       efootballUsername: map['efootballUsername'] ?? '',
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: _parseDateTime(map['createdAt']),
+      updatedAt: _parseDateTime(map['updatedAt']),
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) {
+      return DateTime.now();
+    }
+    
+    if (value is DateTime) {
+      return value;
+    }
+    
+    if (value is String) {
+      return DateTime.parse(value);
+    }
+    
+    // Firestore Timestamp の場合
+    try {
+      // Timestamp オブジェクトの場合は toDate() メソッドを使用
+      if (value.runtimeType.toString().contains('Timestamp')) {
+        return value.toDate();
+      }
+    } catch (e) {
+      print('Timestamp変換エラー: $e');
+    }
+    
+    return DateTime.now();
   }
 
   User copyWith({

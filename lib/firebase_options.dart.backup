@@ -44,38 +44,37 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAPdt7Mx5McWDbKapmVaE_ZLL0KpMNlA6g',
-    appId: '1:84950683388:web:ad66e6fc2186f43ac4d179',
-    messagingSenderId: '84950683388',
+    apiKey: 'your-web-api-key',
+    appId: 'your-web-app-id',
+    messagingSenderId: 'your-sender-id',
     projectId: 'efootball-analyzer',
     authDomain: 'efootball-analyzer.firebaseapp.com',
-    storageBucket: 'efootball-analyzer.firebasestorage.app',
-    measurementId: 'G-1K5X2ST2LM',
+    storageBucket: 'efootball-analyzer.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAPdt7Mx5McWDbKapmVaE_ZLL0KpMNlA6g',
-    appId: '1:84950683388:android:ad66e6fc2186f43ac4d179',
-    messagingSenderId: '84950683388',
+    apiKey: 'your-android-api-key',
+    appId: 'your-android-app-id',
+    messagingSenderId: 'your-sender-id',
     projectId: 'efootball-analyzer',
-    storageBucket: 'efootball-analyzer.firebasestorage.app',
+    storageBucket: 'efootball-analyzer.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAPdt7Mx5McWDbKapmVaE_ZLL0KpMNlA6g',
-    appId: '1:84950683388:ios:ad66e6fc2186f43ac4d179',
-    messagingSenderId: '84950683388',
+    apiKey: 'your-ios-api-key',
+    appId: 'your-ios-app-id',
+    messagingSenderId: 'your-sender-id',
     projectId: 'efootball-analyzer',
-    storageBucket: 'efootball-analyzer.firebasestorage.app',
+    storageBucket: 'efootball-analyzer.appspot.com',
     iosBundleId: 'com.efootball.analyzer',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAPdt7Mx5McWDbKapmVaE_ZLL0KpMNlA6g',
-    appId: '1:84950683388:ios:ad66e6fc2186f43ac4d179',
-    messagingSenderId: '84950683388',
+    apiKey: 'your-macos-api-key',
+    appId: 'your-macos-app-id',
+    messagingSenderId: 'your-sender-id',
     projectId: 'efootball-analyzer',
-    storageBucket: 'efootball-analyzer.firebasestorage.app',
+    storageBucket: 'efootball-analyzer.appspot.com',
     iosBundleId: 'com.efootball.analyzer',
   );
 }

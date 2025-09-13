@@ -29,14 +29,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
+    print('ログイン試行開始: ${_emailController.text.trim()}');
+    
     final success = await authProvider.signIn(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
+    print('ログイン結果: $success');
+    print('エラーメッセージ: ${authProvider.errorMessage}');
+
     if (success && mounted) {
+      print('ログイン成功、ホーム画面に遷移');
       context.go('/home');
     } else if (mounted) {
+      print('ログイン失敗、エラーメッセージを表示');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'ログインに失敗しました'),

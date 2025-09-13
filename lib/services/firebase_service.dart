@@ -49,11 +49,15 @@ class FirebaseService {
     required String password,
   }) async {
     try {
-      return await auth.signInWithEmailAndPassword(
+      print('FirebaseService: signInWithEmailAndPassword呼び出し - $email');
+      final result = await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print('FirebaseService: ログイン成功 - ${result.user?.uid}');
+      return result;
     } catch (e) {
+      print('FirebaseService: ログインエラー - $e');
       throw Exception('ログインに失敗しました: $e');
     }
   }
