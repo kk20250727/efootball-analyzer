@@ -20,12 +20,12 @@ class AuthProvider with ChangeNotifier {
   void _initializeAuth() {
     FirebaseService.authStateChanges.listen((firebase_auth.User? user) {
       print('AuthProvider: 認証状態変更 - ${user?.uid}');
-      if (user != null) {
-        _loadUserData(user.uid);
-      } else {
+      if (user == null) {
         _user = null;
         notifyListeners();
       }
+      // ログイン時は signIn メソッドでユーザーデータを読み込むため、
+      // ここではユーザーデータの読み込みを行わない
     });
   }
 
@@ -84,11 +84,18 @@ class AuthProvider with ChangeNotifier {
 
     try {
       print('AuthProvider: FirebaseService.signInWithEmailAndPassword呼び出し');
-      await FirebaseService.signInWithEmailAndPassword(
+      final userCredential = await FirebaseService.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      print('AuthProvider: ログイン成功');
+      print('AuthProvider: ログイン成功 - ${userCredential.user?.uid}');
+      
+      // ユーザーデータの読み込みを待つ
+      if (userCredential.user != null) {
+        await _loadUserData(userCredential.user!.uid);
+        print('AuthProvider: ユーザーデータ読み込み完了');
+      }
+      
       _isLoading = false;
       notifyListeners();
       return true;
