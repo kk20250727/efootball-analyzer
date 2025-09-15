@@ -21,13 +21,24 @@ class OCRService {
       throw Exception('OCR処理に失敗しました: $e');
     }
   }
+  
+  static Future<String> recognizeTextFromXFile(XFile imageFile) async {
+    try {
+      final inputImage = InputImage.fromFilePath(imageFile.path);
+      final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
+      
+      return recognizedText.text;
+    } catch (e) {
+      throw Exception('OCR処理に失敗しました: $e');
+    }
+  }
 
   static Future<List<String>> recognizeMultipleImages(List<XFile> imageFiles) async {
     List<String> results = [];
     
     for (XFile imageFile in imageFiles) {
       try {
-        final text = await recognizeText(File(imageFile.path));
+        final text = await recognizeTextFromXFile(imageFile);
         results.add(text);
       } catch (e) {
         debugPrint('画像の処理に失敗しました: ${imageFile.path} - $e');

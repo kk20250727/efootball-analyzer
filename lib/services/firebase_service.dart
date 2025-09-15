@@ -1,16 +1,34 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../firebase_options.dart';
+import 'package:flutter/foundation.dart';
 
 class FirebaseService {
   static FirebaseAuth get auth => FirebaseAuth.instance;
   static FirebaseFirestore get firestore => FirebaseFirestore.instance;
 
   static Future<void> initialize() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    try {
+      // Web環境では簡単な設定で初期化
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: 'demo-api-key',
+            appId: 'demo-app-id',
+            messagingSenderId: 'demo-sender-id',
+            projectId: 'efootball-gachi',
+            authDomain: 'efootball-gachi.firebaseapp.com',
+            storageBucket: 'efootball-gachi.appspot.com',
+          ),
+        );
+      } else {
+        await Firebase.initializeApp();
+      }
+      print('Firebase初期化成功');
+    } catch (e) {
+      print('Firebase初期化エラー: $e');
+      // Firebase初期化に失敗してもアプリは続行
+    }
   }
 
   static User? get currentUser => auth.currentUser;

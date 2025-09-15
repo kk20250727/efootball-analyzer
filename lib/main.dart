@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'services/firebase_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/match_provider.dart';
 import 'providers/squad_provider.dart';
@@ -9,7 +8,8 @@ import 'utils/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseService.initialize();
+  // Firebase初期化を一時的にスキップして高速起動
+  print('アプリ起動中...');
   runApp(const EfootballAnalyzerApp());
 }
 

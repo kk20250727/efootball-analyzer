@@ -1,50 +1,35 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import '../models/user.dart' as app_user;
-import '../services/firebase_service.dart';
+
+class User {
+  final String id;
+  final String email;
+  final String efootballUsername;
+
+  User({
+    required this.id,
+    required this.email,
+    required this.efootballUsername,
+  });
+}
 
 class AuthProvider with ChangeNotifier {
-  app_user.User? _user;
+  User? _user;
   bool _isLoading = false;
   String? _errorMessage;
 
-  app_user.User? get user => _user;
+  User? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
 
   AuthProvider() {
-    _initializeAuth();
-  }
-
-  void _initializeAuth() {
-    FirebaseService.authStateChanges.listen((firebase_auth.User? user) {
-      print('AuthProvider: 認証状態変更 - ${user?.uid}');
-      if (user == null) {
-        _user = null;
-        notifyListeners();
-      }
-      // ログイン時は signIn メソッドでユーザーデータを読み込むため、
-      // ここではユーザーデータの読み込みを行わない
-    });
-  }
-
-  Future<void> _loadUserData(String uid) async {
-    try {
-      print('AuthProvider: ユーザーデータ読み込み開始 - $uid');
-      final doc = await FirebaseService.firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        _user = app_user.User.fromMap(doc.data()!);
-        print('AuthProvider: ユーザーデータ読み込み成功 - ${_user?.efootballUsername}');
-        notifyListeners();
-      } else {
-        print('AuthProvider: ユーザーデータが存在しません');
-      }
-    } catch (e) {
-      print('AuthProvider: ユーザーデータ読み込みエラー - $e');
-      _errorMessage = 'ユーザーデータの読み込みに失敗しました: $e';
-      notifyListeners();
-    }
+    // デモ用：自動ログイン
+    _user = User(
+      id: 'demo-user',
+      email: 'demo@example.com',
+      efootballUsername: 'demo_player',
+    );
+    print('AuthProvider: デモユーザーでログイン済み');
   }
 
   Future<bool> signUp({
@@ -56,21 +41,18 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    try {
-      await FirebaseService.signUpWithEmailAndPassword(
-        email: email,
-        password: password,
-        efootballUsername: efootballUsername,
-      );
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    // デモ実装：即座に成功
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    _user = User(
+      id: 'new-user-${DateTime.now().millisecondsSinceEpoch}',
+      email: email,
+      efootballUsername: efootballUsername,
+    );
+    
+    _isLoading = false;
+    notifyListeners();
+    return true;
   }
 
   Future<bool> signIn({
@@ -82,46 +64,28 @@ class AuthProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    try {
-      print('AuthProvider: FirebaseService.signInWithEmailAndPassword呼び出し');
-      final userCredential = await FirebaseService.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      print('AuthProvider: ログイン成功 - ${userCredential.user?.uid}');
-      
-      // ユーザーデータの読み込みを待つ
-      if (userCredential.user != null) {
-        await _loadUserData(userCredential.user!.uid);
-        print('AuthProvider: ユーザーデータ読み込み完了');
-      }
-      
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      print('AuthProvider: ログインエラー - $e');
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    // デモ実装：即座に成功
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    _user = User(
+      id: 'user-${DateTime.now().millisecondsSinceEpoch}',
+      email: email,
+      efootballUsername: 'hisa_racer', // デモデータ
+    );
+    
+    print('AuthProvider: ログイン成功 - ${_user?.id}');
+    _isLoading = false;
+    notifyListeners();
+    return true;
   }
 
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      await FirebaseService.signOut();
-      _user = null;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-    }
+    _user = null;
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> updateEfootballUsername(String newUsername) async {
@@ -130,21 +94,18 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    try {
-      await FirebaseService.updateEfootballUsername(newUsername);
-      _user = _user!.copyWith(
-        efootballUsername: newUsername,
-        updatedAt: DateTime.now(),
-      );
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    // デモ実装
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    _user = User(
+      id: _user!.id,
+      email: _user!.email,
+      efootballUsername: newUsername,
+    );
+    
+    _isLoading = false;
+    notifyListeners();
+    return true;
   }
 
   void clearError() {

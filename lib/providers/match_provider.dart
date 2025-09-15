@@ -1,149 +1,139 @@
 import 'package:flutter/foundation.dart';
 import '../models/match_result.dart';
-import '../services/firebase_service.dart';
 
 class MatchProvider with ChangeNotifier {
   List<MatchData> _matches = [];
   bool _isLoading = false;
-  String? _errorMessage;
 
   List<MatchData> get matches => _matches;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
 
   // 統計データ
   int get totalMatches => _matches.length;
   int get wins => _matches.where((m) => m.result == MatchResult.win).length;
   int get losses => _matches.where((m) => m.result == MatchResult.loss).length;
   int get draws => _matches.where((m) => m.result == MatchResult.draw).length;
-  double get winRate => totalMatches > 0 ? wins / totalMatches : 0.0;
-  double get averageGoalsFor => totalMatches > 0 
-      ? _matches.fold(0, (sum, m) => sum + m.myScore) / totalMatches 
+  double get winRate => totalMatches > 0 ? (wins / totalMatches) * 100 : 0.0;
+  double get averageGoalsScored => totalMatches > 0 
+      ? _matches.map((m) => m.myScore).reduce((a, b) => a + b) / totalMatches 
       : 0.0;
-  double get averageGoalsAgainst => totalMatches > 0 
-      ? _matches.fold(0, (sum, m) => sum + m.opponentScore) / totalMatches 
+  double get averageGoalsConceded => totalMatches > 0 
+      ? _matches.map((m) => m.opponentScore).reduce((a, b) => a + b) / totalMatches 
       : 0.0;
 
+  // 追加のゲッターメソッド（分析画面で使用）
+  double get averageGoalsFor => averageGoalsScored;
+  double get averageGoalsAgainst => averageGoalsConceded;
+
+  MatchProvider() {
+    _loadDemoData();
+  }
+
+  void _loadDemoData() {
+    // デモデータを追加
+    _matches = [
+      MatchData(
+        id: 'demo1',
+        userId: 'demo-user',
+        myTeamName: 'Barcelona',
+        opponentTeamName: 'Real Madrid',
+        myUsername: 'demo_player',
+        opponentUsername: 'rival_player',
+        myScore: 2,
+        opponentScore: 1,
+        result: MatchResult.win,
+        matchDate: DateTime.now().subtract(const Duration(days: 1)),
+        squadId: null,
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+      MatchData(
+        id: 'demo2',
+        userId: 'demo-user',
+        myTeamName: 'Manchester City',
+        opponentTeamName: 'Liverpool',
+        myUsername: 'demo_player',
+        opponentUsername: 'another_player',
+        myScore: 1,
+        opponentScore: 3,
+        result: MatchResult.loss,
+        matchDate: DateTime.now().subtract(const Duration(days: 2)),
+        squadId: null,
+        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+      ),
+    ];
+    notifyListeners();
+  }
+
+  Future<void> addMatch(MatchData match) async {
+    _isLoading = true;
+    notifyListeners();
+
+    // デモ実装：即座に追加
+    await Future.delayed(const Duration(milliseconds: 300));
+    _matches.insert(0, match);
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> updateMatch(MatchData updatedMatch) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    final index = _matches.indexWhere((m) => m.id == updatedMatch.id);
+    if (index != -1) {
+      _matches[index] = updatedMatch;
+    }
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> deleteMatch(String matchId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    _matches.removeWhere((m) => m.id == matchId);
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // データロード用のメソッド（画面で呼び出される）
   Future<void> loadMatches() async {
-    final userId = FirebaseService.currentUserId;
-    if (userId == null) return;
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final querySnapshot = await FirebaseService.firestore
-          .collection('matches')
-          .where('userId', isEqualTo: userId)
-          .orderBy('matchDate', descending: true)
-          .get();
-
-      _matches = querySnapshot.docs
-          .map((doc) => MatchData.fromMap(doc.data()))
-          .toList();
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = '戦績データの読み込みに失敗しました: $e';
-      _isLoading = false;
-      notifyListeners();
-    }
+    // デモ版では何もしない（既にデータがロード済み）
+    return;
   }
 
-  Future<bool> addMatch(MatchData match) async {
-    final userId = FirebaseService.currentUserId;
-    if (userId == null) return false;
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await FirebaseService.firestore
-          .collection('matches')
-          .doc(match.id)
-          .set(match.toMap());
-
-      _matches.insert(0, match);
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = '戦績データの保存に失敗しました: $e';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> updateMatch(MatchData match) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await FirebaseService.firestore
-          .collection('matches')
-          .doc(match.id)
-          .update(match.toMap());
-
-      final index = _matches.indexWhere((m) => m.id == match.id);
-      if (index != -1) {
-        _matches[index] = match;
-      }
-
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = '戦績データの更新に失敗しました: $e';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> deleteMatch(String matchId) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await FirebaseService.firestore
-          .collection('matches')
-          .doc(matchId)
-          .delete();
-
-      _matches.removeWhere((m) => m.id == matchId);
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = '戦績データの削除に失敗しました: $e';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // 時間帯別の勝率分析
-  Map<int, Map<String, int>> getMatchesByHour() {
-    Map<int, Map<String, int>> hourlyStats = {};
+  // 時間帯別の分析データ
+  Map<int, Map<String, dynamic>> getMatchesByHour() {
+    Map<int, Map<String, dynamic>> hourlyStats = {};
     
     for (var match in _matches) {
       int hour = match.matchDate.hour;
       if (!hourlyStats.containsKey(hour)) {
-        hourlyStats[hour] = {'wins': 0, 'losses': 0, 'draws': 0, 'total': 0};
+        hourlyStats[hour] = {
+          'matches': 0,
+          'wins': 0,
+          'losses': 0,
+          'draws': 0,
+        };
       }
       
-      hourlyStats[hour]!['total'] = hourlyStats[hour]!['total']! + 1;
+      hourlyStats[hour]!['matches'] = hourlyStats[hour]!['matches'] + 1;
+      
       switch (match.result) {
         case MatchResult.win:
-          hourlyStats[hour]!['wins'] = hourlyStats[hour]!['wins']! + 1;
+          hourlyStats[hour]!['wins'] = hourlyStats[hour]!['wins'] + 1;
           break;
         case MatchResult.loss:
-          hourlyStats[hour]!['losses'] = hourlyStats[hour]!['losses']! + 1;
+          hourlyStats[hour]!['losses'] = hourlyStats[hour]!['losses'] + 1;
           break;
         case MatchResult.draw:
-          hourlyStats[hour]!['draws'] = hourlyStats[hour]!['draws']! + 1;
+          hourlyStats[hour]!['draws'] = hourlyStats[hour]!['draws'] + 1;
           break;
       }
     }
@@ -151,45 +141,36 @@ class MatchProvider with ChangeNotifier {
     return hourlyStats;
   }
 
-  // スカッド別の勝率分析
+  // スカッド別の分析データ
   Map<String, Map<String, dynamic>> getMatchesBySquad() {
     Map<String, Map<String, dynamic>> squadStats = {};
     
     for (var match in _matches) {
-      String squadId = match.squadId ?? 'Unknown';
-      if (!squadStats.containsKey(squadId)) {
-        squadStats[squadId] = {
+      String squadKey = match.squadId ?? 'default';
+      if (!squadStats.containsKey(squadKey)) {
+        squadStats[squadKey] = {
+          'matches': 0,
           'wins': 0,
           'losses': 0,
           'draws': 0,
-          'total': 0,
-          'goalsFor': 0,
-          'goalsAgainst': 0,
         };
       }
       
-      squadStats[squadId]!['total'] = squadStats[squadId]!['total'] + 1;
-      squadStats[squadId]!['goalsFor'] = squadStats[squadId]!['goalsFor'] + match.myScore;
-      squadStats[squadId]!['goalsAgainst'] = squadStats[squadId]!['goalsAgainst'] + match.opponentScore;
+      squadStats[squadKey]!['matches'] = squadStats[squadKey]!['matches'] + 1;
       
       switch (match.result) {
         case MatchResult.win:
-          squadStats[squadId]!['wins'] = squadStats[squadId]!['wins'] + 1;
+          squadStats[squadKey]!['wins'] = squadStats[squadKey]!['wins'] + 1;
           break;
         case MatchResult.loss:
-          squadStats[squadId]!['losses'] = squadStats[squadId]!['losses'] + 1;
+          squadStats[squadKey]!['losses'] = squadStats[squadKey]!['losses'] + 1;
           break;
         case MatchResult.draw:
-          squadStats[squadId]!['draws'] = squadStats[squadId]!['draws'] + 1;
+          squadStats[squadKey]!['draws'] = squadStats[squadKey]!['draws'] + 1;
           break;
       }
     }
     
     return squadStats;
-  }
-
-  void clearError() {
-    _errorMessage = null;
-    notifyListeners();
   }
 }
