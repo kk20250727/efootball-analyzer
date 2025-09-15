@@ -6,10 +6,12 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/match/match_upload_screen.dart';
+import '../screens/match/match_ocr_screen.dart';
 import '../screens/match/match_confirm_screen.dart';
 import '../screens/opponent/opponent_upload_screen.dart';
 import '../screens/squad/squad_list_screen.dart';
 import '../screens/squad/squad_edit_screen.dart';
+import '../screens/squad/squad_detail_screen.dart';
 import '../screens/analysis/analysis_screen.dart';
 
 class AppRouter {
@@ -27,10 +29,10 @@ class AppRouter {
       final protectedRoutes = [
         '/home',
         '/match-upload',
-        '/match-confirm',
+        '/match/ocr',
+        '/match/confirm',
         '/opponent-upload',
-        '/squad-list',
-        '/squad-edit',
+        '/squads',
         '/analysis',
       ];
       
@@ -71,7 +73,11 @@ class AppRouter {
         builder: (context, state) => const MatchUploadScreen(),
       ),
       GoRoute(
-        path: '/match-confirm',
+        path: '/match/ocr',
+        builder: (context, state) => const MatchOCRScreen(),
+      ),
+      GoRoute(
+        path: '/match/confirm',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return MatchConfirmScreen(
@@ -85,17 +91,32 @@ class AppRouter {
         builder: (context, state) => const OpponentUploadScreen(),
       ),
       GoRoute(
-        path: '/squad-list',
+        path: '/squads',
         builder: (context, state) => const SquadListScreen(),
-      ),
-      GoRoute(
-        path: '/squad-edit',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return SquadEditScreen(
-            squad: extra?['squad'],
-          );
-        },
+        routes: [
+          GoRoute(
+            path: '/add',
+            builder: (context, state) => const SquadEditScreen(),
+          ),
+          GoRoute(
+            path: '/edit',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return SquadEditScreen(
+                squad: extra?['squad'],
+              );
+            },
+          ),
+          GoRoute(
+            path: '/detail',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return SquadDetailScreen(
+                squad: extra?['squad'],
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/analysis',

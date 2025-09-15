@@ -99,6 +99,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // アクションボタン
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => context.push('/match/ocr'),
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('戦績を読み取り'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.cyan,
+                            foregroundColor: AppTheme.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/squads'),
+                          icon: const Icon(Icons.groups),
+                          label: const Text('スカッド管理'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.cyan,
+                            side: const BorderSide(color: AppTheme.cyan),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
                   
                   // 統計サマリー
                   Text(
@@ -185,25 +226,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         '戦績を追加',
                         Icons.add_photo_alternate,
                         AppTheme.cyan,
-                        () => context.go('/match-upload'),
+                        () => context.push('/match/ocr'),
                       ),
                       _buildActionCard(
-                        '対戦相手分析',
-                        Icons.people,
+                        'データ分析',
+                        Icons.analytics,
                         AppTheme.orange,
-                        () => context.go('/opponent-upload'),
+                        () => context.push('/analysis'),
                       ),
                       _buildActionCard(
                         'スカッド管理',
                         Icons.group,
                         AppTheme.green,
-                        () => context.go('/squad-list'),
+                        () => context.push('/squads'),
                       ),
                       _buildActionCard(
-                        'データ分析',
-                        Icons.analytics,
+                        '対戦相手分析',
+                        Icons.people,
                         AppTheme.yellow,
-                        () => context.go('/analysis'),
+                        () => context.push('/opponent-upload'),
                       ),
                     ],
                   ),

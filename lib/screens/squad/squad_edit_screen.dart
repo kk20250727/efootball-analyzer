@@ -98,7 +98,7 @@ class _SquadEditScreenState extends State<SquadEditScreen> {
             backgroundColor: AppTheme.green,
           ),
         );
-        context.go('/squad-list');
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -276,7 +276,7 @@ class _SquadEditScreenState extends State<SquadEditScreen> {
                     width: double.infinity,
                     height: 56,
                     child: OutlinedButton(
-                      onPressed: _isSaving ? null : () => context.go('/squad-list'),
+                      onPressed: _isSaving ? null : () => context.pop(),
                       child: const Text('キャンセル'),
                     ),
                   ),

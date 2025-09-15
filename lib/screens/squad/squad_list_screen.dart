@@ -28,7 +28,7 @@ class _SquadListScreenState extends State<SquadListScreen> {
         title: const Text('スカッド管理'),
         actions: [
           IconButton(
-            onPressed: () => context.go('/squad-edit'),
+            onPressed: () => context.push('/squads/add'),
             icon: const Icon(Icons.add),
           ),
         ],
@@ -71,7 +71,7 @@ class _SquadListScreenState extends State<SquadListScreen> {
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
-                      onPressed: () => context.go('/squad-edit'),
+                      onPressed: () => context.push('/squads/add'),
                       icon: const Icon(Icons.add),
                       label: const Text('スカッドを追加'),
                     ),
@@ -85,9 +85,10 @@ class _SquadListScreenState extends State<SquadListScreen> {
               itemCount: squadProvider.squads.length,
               itemBuilder: (context, index) {
                 final squad = squadProvider.squads[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      onTap: () => context.push('/squads/detail', extra: {'squad': squad}),
                     leading: CircleAvatar(
                       backgroundColor: AppTheme.cyan,
                       child: Text(
@@ -130,7 +131,7 @@ class _SquadListScreenState extends State<SquadListScreen> {
                       onSelected: (value) {
                         switch (value) {
                           case 'edit':
-                            context.go('/squad-edit', extra: {'squad': squad});
+                            context.push('/squads/edit', extra: {'squad': squad});
                             break;
                           case 'delete':
                             _showDeleteDialog(squad);
@@ -168,7 +169,7 @@ class _SquadListScreenState extends State<SquadListScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/squad-edit'),
+        onPressed: () => context.push('/squads/add'),
         child: const Icon(Icons.add),
       ),
     );

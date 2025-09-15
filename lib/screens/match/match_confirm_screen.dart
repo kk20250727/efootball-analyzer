@@ -5,7 +5,7 @@ import '../../providers/match_provider.dart';
 import '../../providers/squad_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/match_result.dart';
-import '../../models/match_data.dart';
+// import '../../models/match_data.dart'; // このインポートは不要
 import '../../services/match_parser_service.dart';
 import '../../utils/app_theme.dart';
 
