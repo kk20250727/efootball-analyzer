@@ -37,64 +37,157 @@ class MatchParserService {
   static List<ParsedMatchData> parseMatchData(String ocrText, String userEfootballUsername) {
     List<ParsedMatchData> matches = [];
     
-    // テキストを行に分割し、空行を除去
-    List<String> lines = ocrText.split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    debugPrint('=== eFootball OCR解析開始 ===');
+    debugPrint('ユーザー名: $userEfootballUsername');
+    debugPrint('OCRテキスト:\n$ocrText');
     
-    debugPrint('OCR解析開始: ${lines.length}行のテキスト');
+    // eFootballの試合履歴画面に特化した解析
+    matches = _parseEFootballMatchHistory(ocrText, userEfootballUsername);
     
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i];
+    debugPrint('解析完了: ${matches.length}試合のデータを抽出');
+    return matches;
+  }
+
+  static List<ParsedMatchData> _parseEFootballMatchHistory(String ocrText, String userEfootballUsername) {
+    List<ParsedMatchData> matches = [];
+    
+    // 全体のテキストから試合ブロックを抽出
+    List<String> matchBlocks = _extractMatchBlocks(ocrText);
+    
+    for (String block in matchBlocks) {
+      ParsedMatchData? matchData = _parseMatchBlock(block, userEfootballUsername);
+      if (matchData != null) {
+        matches.add(matchData);
+        debugPrint('試合データ抽出成功: ${matchData.myTeamName} vs ${matchData.opponentTeamName}');
+      }
+    }
+    
+    return matches;
+  }
+
+  static List<String> _extractMatchBlocks(String ocrText) {
+    List<String> blocks = [];
+    
+    // 日時パターンで区切って試合ブロックを抽出
+    List<String> lines = ocrText.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    
+    List<String> currentBlock = [];
+    
+    for (String line in lines) {
+      // 日時パターンを検出（eFootball形式: 2025/09/13 18:19）
+      if (RegExp(r'\d{4}/\d{1,2}/\d{1,2}\s+\d{1,2}:\d{1,2}').hasMatch(line)) {
+        // 前のブロックを保存
+        if (currentBlock.isNotEmpty) {
+          blocks.add(currentBlock.join('\n'));
+        }
+        // 新しいブロック開始
+        currentBlock = [line];
+      } else {
+        currentBlock.add(line);
+      }
+    }
+    
+    // 最後のブロックを追加
+    if (currentBlock.isNotEmpty) {
+      blocks.add(currentBlock.join('\n'));
+    }
+    
+    debugPrint('抽出した試合ブロック数: ${blocks.length}');
+    for (int i = 0; i < blocks.length; i++) {
+      debugPrint('ブロック ${i + 1}:\n${blocks[i]}\n---');
+    }
+    
+    return blocks;
+  }
+
+  static ParsedMatchData? _parseMatchBlock(String block, String userEfootballUsername) {
+    List<String> lines = block.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    
+    if (lines.length < 3) return null; // 最低3行必要（日時、スコア、ユーザー名）
+    
+    DateTime? matchDate;
+    int? score1, score2;
+    String leftTeam = '', rightTeam = '';
+    String leftUser = '', rightUser = '';
+    
+    for (String line in lines) {
+      // 日時の抽出
+      if (matchDate == null) {
+        matchDate = _parseEFootballDateTime(line);
+      }
       
-      // スコアパターンを検索（より柔軟なパターン）
-      RegExp scorePattern = RegExp(r'(\d+)\s*[-:\s]\s*(\d+)');
+      // スコアの抽出（例: "BOB 3 - 1 FC バルセロナ" または "3 - 1"）
+      RegExp scorePattern = RegExp(r'(\d+)\s*[-–]\s*(\d+)');
       Match? scoreMatch = scorePattern.firstMatch(line);
+      if (scoreMatch != null && score1 == null) {
+        score1 = int.tryParse(scoreMatch.group(1)!);
+        score2 = int.tryParse(scoreMatch.group(2)!);
+        
+        // スコア行からチーム名も抽出を試行
+        String beforeScore = line.substring(0, scoreMatch.start).trim();
+        String afterScore = line.substring(scoreMatch.end).trim();
+        
+        if (beforeScore.isNotEmpty && _isValidTeamName(beforeScore)) {
+          leftTeam = beforeScore;
+        }
+        if (afterScore.isNotEmpty && _isValidTeamName(afterScore)) {
+          rightTeam = afterScore;
+        }
+        
+        debugPrint('スコア発見: $leftTeam $score1 - $score2 $rightTeam');
+      }
       
-      if (scoreMatch != null) {
-        try {
-          int score1 = int.parse(scoreMatch.group(1)!);
-          int score2 = int.parse(scoreMatch.group(2)!);
-          
-          debugPrint('スコア発見: $score1 - $score2 (行 $i: $line)');
-          
-          // スコア周辺からマッチ情報を抽出
-          MatchContext context = _extractMatchContext(lines, i, userEfootballUsername);
-          
-          if (context.isValid) {
-            // ユーザーがどちら側かを判定
-            bool userIsLeftSide = _determineUserSide(context, userEfootballUsername);
-            
-            int myScore = userIsLeftSide ? score1 : score2;
-            int opponentScore = userIsLeftSide ? score2 : score1;
-            String myTeamName = userIsLeftSide ? context.leftTeam : context.rightTeam;
-            String opponentTeamName = userIsLeftSide ? context.rightTeam : context.leftTeam;
-            String myUsername = userIsLeftSide ? context.leftUser : context.rightUser;
-            String opponentUsername = userIsLeftSide ? context.rightUser : context.leftUser;
-            
-            matches.add(ParsedMatchData(
-              myTeamName: myTeamName,
-              opponentTeamName: opponentTeamName,
-              myUsername: myUsername,
-              opponentUsername: opponentUsername,
-              myScore: myScore,
-              opponentScore: opponentScore,
-              matchDate: context.matchDate ?? DateTime.now(),
-            ));
-            
-            debugPrint('マッチデータ追加: $myTeamName($myUsername) $myScore - $opponentScore $opponentTeamName($opponentUsername)');
+      // ユーザー名の抽出（英数字、アンダースコア、ハイフンを含む）
+      List<String> potentialUsers = _extractEFootballUsernames(line);
+      for (String user in potentialUsers) {
+        if (user == userEfootballUsername) {
+          if (leftUser.isEmpty) {
+            leftUser = user;
+          } else if (rightUser.isEmpty) {
+            rightUser = user;
           }
-          
-        } catch (e) {
-          debugPrint('スコア解析エラー: $e');
-          continue;
+        } else {
+          if (leftUser.isEmpty) {
+            leftUser = user;
+          } else if (rightUser.isEmpty && user != leftUser) {
+            rightUser = user;
+          }
+        }
+      }
+      
+      // チーム名の抽出（日本語チーム名に対応）
+      if (_isValidTeamName(line) && !line.contains(RegExp(r'\d+\s*[-–]\s*\d+'))) {
+        if (leftTeam.isEmpty) {
+          leftTeam = line;
+        } else if (rightTeam.isEmpty && line != leftTeam) {
+          rightTeam = line;
         }
       }
     }
     
-    debugPrint('解析完了: ${matches.length}試合のデータを抽出');
-    return matches;
+    // 抽出したデータの検証
+    if (score1 == null || score2 == null || leftUser.isEmpty || rightUser.isEmpty) {
+      debugPrint('必要データが不足: score1=$score1, score2=$score2, leftUser=$leftUser, rightUser=$rightUser');
+      return null;
+    }
+    
+    // デフォルト値設定
+    leftTeam = leftTeam.isEmpty ? 'Team A' : leftTeam;
+    rightTeam = rightTeam.isEmpty ? 'Team B' : rightTeam;
+    matchDate ??= DateTime.now();
+    
+    // ユーザーがどちら側かを判定
+    bool userIsLeftSide = leftUser == userEfootballUsername;
+    
+    return ParsedMatchData(
+      myTeamName: userIsLeftSide ? leftTeam : rightTeam,
+      opponentTeamName: userIsLeftSide ? rightTeam : leftTeam,
+      myUsername: userIsLeftSide ? leftUser : rightUser,
+      opponentUsername: userIsLeftSide ? rightUser : leftUser,
+      myScore: userIsLeftSide ? score1 : score2,
+      opponentScore: userIsLeftSide ? score2 : score1,
+      matchDate: matchDate,
+    );
   }
   
   static MatchContext _extractMatchContext(List<String> lines, int scoreIndex, String userEfootballUsername) {
@@ -157,6 +250,103 @@ class MatchParserService {
     return context;
   }
   
+  // eFootball特化のヘルパーメソッド
+  static DateTime? _parseEFootballDateTime(String text) {
+    // eFootball特有の日時フォーマット: 2025/09/13 18:19
+    RegExp pattern = RegExp(r'(\d{4})/(\d{1,2})/(\d{1,2})\s+(\d{1,2}):(\d{1,2})');
+    Match? match = pattern.firstMatch(text);
+    
+    if (match != null) {
+      try {
+        int year = int.parse(match.group(1)!);
+        int month = int.parse(match.group(2)!);
+        int day = int.parse(match.group(3)!);
+        int hour = int.parse(match.group(4)!);
+        int minute = int.parse(match.group(5)!);
+        
+        DateTime result = DateTime(year, month, day, hour, minute);
+        debugPrint('日時解析成功: $text -> $result');
+        return result;
+      } catch (e) {
+        debugPrint('日時解析エラー: $e');
+      }
+    }
+    
+    return null;
+  }
+
+  static List<String> _extractEFootballUsernames(String text) {
+    List<String> usernames = [];
+    
+    // eFootballのユーザー名パターン（英数字、アンダースコア、ハイフン）
+    RegExp pattern = RegExp(r'\b[A-Za-z0-9_\-]{3,20}\b');
+    Iterable<Match> matches = pattern.allMatches(text);
+    
+    for (Match match in matches) {
+      String username = match.group(0)!;
+      
+      // eFootball特有の除外パターン
+      if (!_isEFootballSystemText(username)) {
+        usernames.add(username);
+        debugPrint('ユーザー名候補: $username');
+      }
+    }
+    
+    return usernames;
+  }
+
+  static bool _isEFootballSystemText(String text) {
+    // eFootballのシステムテキスト・UIテキストを除外
+    List<String> systemTexts = [
+      'BOB', 'FIFA', 'PES', 'eFootball', 'KONAMI',
+      'Division', 'Rank', 'GP', 'WIN', 'LOSE', 'DRAW',
+      'vs', 'match', 'game', 'play', 'player',
+      '2025', '2024', '2023', // 年数
+    ];
+    
+    String upper = text.toUpperCase();
+    for (String systemText in systemTexts) {
+      if (upper.contains(systemText.toUpperCase())) {
+        return true;
+      }
+    }
+    
+    // 数字のみは除外
+    if (RegExp(r'^\d+$').hasMatch(text)) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  static bool _isValidTeamName(String text) {
+    // チーム名として有効かチェック
+    text = text.trim();
+    
+    // 長さチェック
+    if (text.length < 2 || text.length > 50) return false;
+    
+    // 数字のみは除外
+    if (RegExp(r'^\d+$').hasMatch(text)) return false;
+    
+    // スコアパターンは除外
+    if (RegExp(r'\d+\s*[-–]\s*\d+').hasMatch(text)) return false;
+    
+    // 日時パターンは除外
+    if (RegExp(r'\d{4}/\d{1,2}/\d{1,2}').hasMatch(text)) return false;
+    
+    // eFootballシステムテキストは除外
+    if (_isEFootballSystemText(text)) return false;
+    
+    // 一般的なチーム名パターン（日本語含む）
+    if (RegExp(r'^[A-Za-z0-9\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\u3400-\u4DBF]+$').hasMatch(text)) {
+      debugPrint('有効なチーム名: $text');
+      return true;
+    }
+    
+    return false;
+  }
+
   static DateTime? _parseDateTime(String text) {
     // 複数の日付フォーマットに対応
     List<RegExp> datePatterns = [

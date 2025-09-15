@@ -47,50 +47,88 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
     });
 
     try {
+      final authProvider = context.read<AuthProvider>();
+      final userUsername = authProvider.user?.efootballUsername ?? '';
+
+      if (userUsername.isEmpty) {
+        setState(() {
+          _statusMessage = 'eFootballユーザー名が設定されていません。設定画面で設定してください。';
+          _isProcessing = false;
+        });
+        return;
+      }
+
+      debugPrint('=== eFootball OCR処理開始 ===');
+      debugPrint('ユーザー名: $userUsername');
+      debugPrint('選択画像数: ${_selectedImages.length}');
+
+      setState(() {
+        _statusMessage = '${_selectedImages.length}枚の画像を解析中...';
+      });
+
       // OCR処理
       final ocrTexts = await OCRService.recognizeMultipleImages(_selectedImages);
       
       if (ocrTexts.isEmpty) {
         setState(() {
-          _statusMessage = 'テキストが検出されませんでした';
-          _isProcessing = false;
-        });
-        return;
-      }
-
-      // マッチデータ解析
-      final authProvider = context.read<AuthProvider>();
-      final userUsername = authProvider.user?.efootballUsername ?? '';
-      
-      final allMatchData = <ParsedMatchData>[];
-      for (final ocrText in ocrTexts) {
-        final matchData = MatchParserService.parseMatchData(ocrText, userUsername);
-        allMatchData.addAll(matchData);
-      }
-
-      if (allMatchData.isEmpty) {
-        setState(() {
-          _statusMessage = '試合データが見つかりませんでした';
+          _statusMessage = 'テキストが検出されませんでした。画像を確認してください。';
           _isProcessing = false;
         });
         return;
       }
 
       setState(() {
-        _statusMessage = '${allMatchData.length}件の試合データを検出しました';
+        _statusMessage = 'OCR完了。試合データを解析中...';
+      });
+
+      // マッチデータ解析
+      final allMatchData = <ParsedMatchData>[];
+      for (int i = 0; i < ocrTexts.length; i++) {
+        final ocrText = ocrTexts[i];
+        debugPrint('=== 画像 ${i + 1} の解析結果 ===');
+        debugPrint('OCRテキスト:\n$ocrText');
+        
+        if (ocrText.trim().isEmpty) {
+          debugPrint('画像 ${i + 1}: OCRでテキストを検出できませんでした');
+          continue;
+        }
+
+        final matchData = MatchParserService.parseMatchData(ocrText, userUsername);
+        allMatchData.addAll(matchData);
+        
+        debugPrint('画像 ${i + 1}から${matchData.length}件の試合データを抽出');
+      }
+
+      debugPrint('=== 解析完了 ===');
+      debugPrint('総抽出試合数: ${allMatchData.length}');
+
+      if (allMatchData.isEmpty) {
+        setState(() {
+          _statusMessage = '試合データを検出できませんでした。\n\n確認事項：\n• eFootballの試合履歴画面のスクリーンショットか\n• 画像が鮮明でテキストが読み取れるか\n• ユーザー名「$userUsername」が画像に含まれているか\n• 日時とスコアが表示されているか';
+          _isProcessing = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _statusMessage = '✅ ${allMatchData.length}件の試合データを検出しました！';
         _isProcessing = false;
       });
+
+      // 少し待ってから確認画面に遷移
+      await Future.delayed(const Duration(milliseconds: 1500));
 
       // 確認画面に遷移
       if (mounted) {
         context.push('/match/confirm', extra: {
           'matchData': allMatchData,
-          'ocrText': ocrTexts.join('\n---\n'),
+          'ocrText': ocrTexts.join('\n\n=== 次の画像 ===\n\n'),
         });
       }
     } catch (e) {
+      debugPrint('OCR処理エラー: $e');
       setState(() {
-        _statusMessage = 'OCR処理エラー: $e';
+        _statusMessage = 'OCR処理エラー: $e\n\n画像の品質を確認するか、別の画像を試してください。';
         _isProcessing = false;
       });
     }
