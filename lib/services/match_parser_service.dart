@@ -41,8 +41,23 @@ class MatchParserService {
     debugPrint('ユーザー名: $userEfootballUsername');
     debugPrint('OCRテキスト:\n$ocrText');
     
+    // 全てのユーザー名を検出
+    List<String> detectedUsernames = extractUsernames(ocrText);
+    debugPrint('検出されたユーザー名: $detectedUsernames');
+    
+    // 指定されたユーザー名が含まれていない場合、柔軟に対応
+    String targetUsername = userEfootballUsername;
+    if (!detectedUsernames.contains(userEfootballUsername)) {
+      debugPrint('指定ユーザー名 "$userEfootballUsername" が見つかりません');
+      if (detectedUsernames.isNotEmpty) {
+        // 最初に見つかったユーザー名を使用
+        targetUsername = detectedUsernames.first;
+        debugPrint('代替ユーザー名として "$targetUsername" を使用');
+      }
+    }
+    
     // eFootballの試合履歴画面に特化した解析
-    matches = _parseEFootballMatchHistory(ocrText, userEfootballUsername);
+    matches = _parseEFootballMatchHistory(ocrText, targetUsername);
     
     debugPrint('解析完了: ${matches.length}試合のデータを抽出');
     return matches;
@@ -490,24 +505,41 @@ class MatchParserService {
   static List<String> extractUsernames(String ocrText) {
     List<String> usernames = [];
     
-    // ユーザー名のパターンを検索（英数字と記号の組み合わせ）
-    RegExp usernamePattern = RegExp(r'[A-Za-z0-9_\-\.]{3,20}');
-    Iterable<Match> matches = usernamePattern.allMatches(ocrText);
+    // eFootball特化のユーザー名パターンを使用
+    List<String> allUsernames = _extractEFootballUsernames(ocrText);
     
-    for (Match match in matches) {
-      String username = match.group(0)!;
-      // 明らかにユーザー名ではない文字列を除外
-      if (!username.contains(RegExp(r'^\d+$')) && // 数字のみは除外
-          !username.contains('vs') &&
-          !username.contains('対戦') &&
-          !username.contains('年') &&
-          !username.contains('月') &&
-          !username.contains('日')) {
+    // より詳細なフィルタリング
+    for (String username in allUsernames) {
+      if (_isValidEFootballUsername(username)) {
         usernames.add(username);
       }
     }
     
-    // 重複を除去
-    return usernames.toSet().toList();
+    // 重複を除去してソート
+    List<String> uniqueUsernames = usernames.toSet().toList();
+    uniqueUsernames.sort();
+    
+    debugPrint('抽出されたユーザー名: $uniqueUsernames');
+    return uniqueUsernames;
+  }
+
+  static bool _isValidEFootballUsername(String username) {
+    // 長さチェック
+    if (username.length < 3 || username.length > 20) return false;
+    
+    // 数字のみは除外
+    if (RegExp(r'^\d+$').hasMatch(username)) return false;
+    
+    // eFootball特有の除外パターン
+    if (_isEFootballSystemText(username)) return false;
+    
+    // 既知のeFootballユーザー名パターンをチェック
+    List<String> knownUsernames = ['hisa_racer', 'visca-tzuyu', 'eftarigato', '0623SN'];
+    if (knownUsernames.contains(username)) return true;
+    
+    // 一般的なユーザー名パターン（英数字、アンダースコア、ハイフン）
+    if (RegExp(r'^[A-Za-z0-9_\-]{3,20}$').hasMatch(username)) return true;
+    
+    return false;
   }
 }

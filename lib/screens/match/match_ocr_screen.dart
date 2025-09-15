@@ -103,8 +103,21 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       debugPrint('総抽出試合数: ${allMatchData.length}');
 
       if (allMatchData.isEmpty) {
+        // 検出されたユーザー名を表示
+        final allUsernames = <String>[];
+        for (final ocrText in ocrTexts) {
+          final usernames = MatchParserService.extractUsernames(ocrText);
+          allUsernames.addAll(usernames);
+        }
+        final uniqueUsernames = allUsernames.toSet().toList();
+        
+        String usernameInfo = '';
+        if (uniqueUsernames.isNotEmpty) {
+          usernameInfo = '\n\n🔍 画像から検出されたユーザー名:\n${uniqueUsernames.join(', ')}\n\n💡 設定されているユーザー名「$userUsername」と一致しません。';
+        }
+        
         setState(() {
-          _statusMessage = '試合データを検出できませんでした。\n\n確認事項：\n• eFootballの試合履歴画面のスクリーンショットか\n• 画像が鮮明でテキストが読み取れるか\n• ユーザー名「$userUsername」が画像に含まれているか\n• 日時とスコアが表示されているか';
+          _statusMessage = '試合データを検出できませんでした。$usernameInfo\n\n確認事項：\n• eFootballの試合履歴画面のスクリーンショットか\n• 画像が鮮明でテキストが読み取れるか\n• 日時とスコアが表示されているか\n• ユーザー名が正しく設定されているか';
           _isProcessing = false;
         });
         return;

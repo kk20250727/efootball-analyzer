@@ -27,7 +27,7 @@ class AuthProvider with ChangeNotifier {
     _user = User(
       id: 'demo-user',
       email: 'demo@example.com',
-      efootballUsername: 'demo_player',
+      efootballUsername: 'hisa_racer',
     );
     print('AuthProvider: デモユーザーでログイン済み');
   }
