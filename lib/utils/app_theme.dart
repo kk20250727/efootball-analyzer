@@ -6,9 +6,11 @@ class AppTheme {
   static const Color darkGray = Color(0xFF1A1A1A);
   static const Color mediumGray = Color(0xFF2D2D2D);
   static const Color lightGray = Color(0xFF404040);
+  static const Color veryLightGray = Color(0xFF9E9E9E);
   static const Color white = Color(0xFFFFFFFF);
   static const Color cyan = Color(0xFF00E5FF);
   static const Color lightCyan = Color(0xFF40E0D0);
+  static const Color blue = Color(0xFF2196F3);
   static const Color green = Color(0xFF4CAF50);
   static const Color red = Color(0xFFF44336);
   static const Color orange = Color(0xFFFF9800);

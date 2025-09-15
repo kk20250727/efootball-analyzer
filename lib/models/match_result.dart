@@ -99,34 +99,4 @@ class MatchData {
       createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
-
-  MatchData copyWith({
-    String? id,
-    String? userId,
-    String? myTeamName,
-    String? opponentTeamName,
-    String? myUsername,
-    String? opponentUsername,
-    int? myScore,
-    int? opponentScore,
-    MatchResult? result,
-    DateTime? matchDate,
-    String? squadId,
-    DateTime? createdAt,
-  }) {
-    return MatchData(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      myTeamName: myTeamName ?? this.myTeamName,
-      opponentTeamName: opponentTeamName ?? this.opponentTeamName,
-      myUsername: myUsername ?? this.myUsername,
-      opponentUsername: opponentUsername ?? this.opponentUsername,
-      myScore: myScore ?? this.myScore,
-      opponentScore: opponentScore ?? this.opponentScore,
-      result: result ?? this.result,
-      matchDate: matchDate ?? this.matchDate,
-      squadId: squadId ?? this.squadId,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
 }
