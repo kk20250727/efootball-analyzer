@@ -31,8 +31,18 @@ class OCRService {
       String processedText = _processEFootballText(recognizedText);
       
       debugPrint('=== OCR処理結果 ===');
+      debugPrint('画像パス: ${imageFile.path}');
+      debugPrint('検出されたブロック数: ${recognizedText.blocks.length}');
       debugPrint('生テキスト:\n${recognizedText.text}');
+      debugPrint('生テキスト長さ: ${recognizedText.text.length}文字');
       debugPrint('処理後テキスト:\n$processedText');
+      debugPrint('処理後テキスト長さ: ${processedText.length}文字');
+      
+      // Web環境でも確認できるようにprint
+      print('OCR結果: ${recognizedText.text.isEmpty ? "テキストなし" : "${recognizedText.text.length}文字検出"}');
+      if (recognizedText.text.isNotEmpty) {
+        print('OCR生テキスト(最初の200文字): ${recognizedText.text.length > 200 ? recognizedText.text.substring(0, 200) + "..." : recognizedText.text}');
+      }
       
       return processedText;
     } catch (e) {

@@ -69,6 +69,15 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       // OCR処理
       final ocrTexts = await OCRService.recognizeMultipleImages(_selectedImages);
       
+      // OCR結果をコンソールとUIに表示
+      print('=== OCR処理完了 ===');
+      for (int i = 0; i < ocrTexts.length; i++) {
+        print('画像${i + 1}: ${ocrTexts[i].isEmpty ? "テキストなし" : "${ocrTexts[i].length}文字"}');
+        if (ocrTexts[i].isNotEmpty) {
+          print('内容: ${ocrTexts[i].substring(0, ocrTexts[i].length > 100 ? 100 : ocrTexts[i].length)}...');
+        }
+      }
+      
       if (ocrTexts.isEmpty) {
         setState(() {
           _statusMessage = 'テキストが検出されませんでした。画像を確認してください。';
@@ -103,21 +112,37 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       debugPrint('総抽出試合数: ${allMatchData.length}');
 
       if (allMatchData.isEmpty) {
+        // OCRで抽出されたテキストをデバッグ表示
+        debugPrint('=== OCR抽出テキスト全文 ===');
+        for (int i = 0; i < ocrTexts.length; i++) {
+          debugPrint('画像 ${i + 1}:\n${ocrTexts[i]}\n---');
+        }
+        
         // 検出されたユーザー名を表示
         final allUsernames = <String>[];
+        final allRawText = <String>[];
         for (final ocrText in ocrTexts) {
+          allRawText.add(ocrText);
           final usernames = MatchParserService.extractUsernames(ocrText);
           allUsernames.addAll(usernames);
+          debugPrint('この画像から検出されたユーザー名: $usernames');
         }
         final uniqueUsernames = allUsernames.toSet().toList();
         
-        String usernameInfo = '';
-        if (uniqueUsernames.isNotEmpty) {
-          usernameInfo = '\n\n🔍 画像から検出されたユーザー名:\n${uniqueUsernames.join(', ')}\n\n💡 設定されているユーザー名「$userUsername」と一致しません。';
+        String detailInfo = '';
+        if (allRawText.isNotEmpty && allRawText.first.trim().isNotEmpty) {
+          // OCRでテキストは抽出できている場合
+          if (uniqueUsernames.isNotEmpty) {
+            detailInfo = '\n\n🔍 検出されたユーザー名:\n${uniqueUsernames.join(', ')}\n\n💡 設定ユーザー名「$userUsername」と一致しません。';
+          } else {
+            detailInfo = '\n\n⚠️ ユーザー名が検出されませんでした。\n\n📝 OCRで抽出されたテキスト（一部）:\n${allRawText.first.substring(0, allRawText.first.length > 100 ? 100 : allRawText.first.length)}...';
+          }
+        } else {
+          detailInfo = '\n\n❌ OCRでテキストを抽出できませんでした。\n画像が不鮮明か、文字が認識できない可能性があります。';
         }
         
         setState(() {
-          _statusMessage = '試合データを検出できませんでした。$usernameInfo\n\n確認事項：\n• eFootballの試合履歴画面のスクリーンショットか\n• 画像が鮮明でテキストが読み取れるか\n• 日時とスコアが表示されているか\n• ユーザー名が正しく設定されているか';
+          _statusMessage = '試合データを検出できませんでした。$detailInfo\n\n確認事項：\n• eFootballの試合履歴画面のスクリーンショットか\n• 画像が鮮明でテキストが読み取れるか\n• 日時とスコアが表示されているか\n• ユーザー名が正しく設定されているか';
           _isProcessing = false;
         });
         return;
@@ -288,6 +313,17 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
                                 : AppTheme.cyan,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _isProcessing ? null : _testWithSampleData,
+                          icon: const Icon(Icons.science),
+                          label: const Text('サンプルデータでテスト'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 40),
+                            foregroundColor: AppTheme.cyan,
+                            side: const BorderSide(color: AppTheme.cyan),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -359,5 +395,73 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _testWithSampleData() async {
+    setState(() {
+      _isProcessing = true;
+      _statusMessage = 'サンプルデータでテスト中...';
+    });
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final userUsername = authProvider.user?.efootballUsername ?? '';
+
+      // サンプルのOCRテキスト（前回の画像から想定されるテキスト）
+      const sampleOcrText = '''
+Division 3
+2025/09/13 18:19
+BOB 3 - 1 FC バルセロナ
+visca-tzuyu    hisa_racer
+
+2025/09/13 01:12
+FC バルセロナ 2 - 2 FC バルセロナ
+eftarigato    hisa_racer
+
+2025/09/13 01:02
+FC バルセロナ 1 - 2 道南の村長
+hisa_racer    0623SN
+''';
+
+      print('=== サンプルデータテスト ===');
+      print('サンプルOCRテキスト:\n$sampleOcrText');
+      print('ユーザー名: $userUsername');
+
+      // サンプルデータで解析
+      final matchData = MatchParserService.parseMatchData(sampleOcrText, userUsername);
+      print('解析結果: ${matchData.length}件の試合データ');
+
+      if (matchData.isEmpty) {
+        // ユーザー名を抽出してみる
+        final usernames = MatchParserService.extractUsernames(sampleOcrText);
+        print('検出されたユーザー名: $usernames');
+        
+        setState(() {
+          _statusMessage = 'サンプルデータでも試合データを検出できませんでした。\n\n検出されたユーザー名: ${usernames.join(', ')}\n設定ユーザー名: $userUsername';
+          _isProcessing = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _statusMessage = '✅ サンプルデータで${matchData.length}件の試合データを検出しました！';
+        _isProcessing = false;
+      });
+
+      // 確認画面に遷移
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) {
+        context.push('/match/confirm', extra: {
+          'matchData': matchData,
+          'ocrText': sampleOcrText,
+        });
+      }
+    } catch (e) {
+      print('サンプルデータテストエラー: $e');
+      setState(() {
+        _statusMessage = 'サンプルデータテストエラー: $e';
+        _isProcessing = false;
+      });
+    }
   }
 }
