@@ -161,7 +161,7 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       if (mounted) {
         context.push('/match/confirm', extra: {
           'matchData': allMatchData,
-          'ocrText': ocrTexts.join('\n\n=== 次の画像 ===\n\n'),
+          'ocrText': allRawText.join('\n\n=== 次の画像 ===\n\n'),
         });
       }
     } catch (e) {

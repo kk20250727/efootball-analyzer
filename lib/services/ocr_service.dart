@@ -2,15 +2,19 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'match_parser_service.dart';
 
+/// OCRサービス - Google ML Kit Text Recognitionを使用
 class OCRService {
   static final TextRecognizer _textRecognizer = TextRecognizer();
-
+  
+  /// 複数画像の選択
   static Future<List<XFile>> pickImages() async {
     final ImagePicker picker = ImagePicker();
     return await picker.pickMultiImage();
   }
 
+  /// 画像からテキストを認識
   static Future<String> recognizeText(File imageFile) async {
     try {
       final inputImage = InputImage.fromFile(imageFile);
@@ -22,6 +26,7 @@ class OCRService {
     }
   }
   
+  /// XFileからテキストを認識（Web対応版）
   static Future<String> recognizeTextFromXFile(XFile imageFile) async {
     try {
       // Web環境での特別処理
@@ -41,144 +46,97 @@ class OCRService {
       debugPrint('画像パス: ${imageFile.path}');
       debugPrint('検出されたブロック数: ${recognizedText.blocks.length}');
       debugPrint('生テキスト:\n${recognizedText.text}');
-      debugPrint('生テキスト長さ: ${recognizedText.text.length}文字');
       debugPrint('処理後テキスト:\n$processedText');
-      debugPrint('処理後テキスト長さ: ${processedText.length}文字');
-      
-      // Web環境でも確認できるようにprint
-      print('OCR結果: ${recognizedText.text.isEmpty ? "テキストなし" : "${recognizedText.text.length}文字検出"}');
-      if (recognizedText.text.isNotEmpty) {
-        print('OCR生テキスト(最初の200文字): ${recognizedText.text.length > 200 ? recognizedText.text.substring(0, 200) + "..." : recognizedText.text}');
-      }
       
       return processedText;
     } catch (e) {
       debugPrint('OCR処理エラー: $e');
-      if (kIsWeb) {
-        // Web環境では手動入力を促すメッセージを返す
-        throw Exception('Web環境ではOCR機能が制限されています。サンプルデータでテストするか、手動入力をご利用ください。');
-      }
       throw Exception('OCR処理に失敗しました: $e');
     }
   }
-
-  static Future<String> _recognizeTextWeb(XFile imageFile) async {
-    // Web環境では現在OCRが利用できないため、
-    // 代替案として手動入力またはサンプルデータを提案
-    print('Web環境ではGoogle ML Kitが動作しません');
-    print('画像ファイル: ${imageFile.name}');
-    
-    // 実際のWeb OCR実装は今後追加予定
-    // 現在は制限を明示してユーザーに代替手段を提案
-    throw Exception(
-      'Web環境ではOCR機能が制限されています。\n\n'
-      '代替手段：\n'
-      '• 「サンプルデータでテスト」ボタンをお試しください\n'
-      '• モバイルアプリ版をご利用ください\n'
-      '• 手動入力機能（今後実装予定）'
-    );
-  }
-
-  static String _processEFootballText(RecognizedText recognizedText) {
-    List<String> processedLines = [];
-    
-    // ブロック単位で処理（座標順にソート）
-    List<TextBlock> sortedBlocks = recognizedText.blocks.toList();
-    sortedBlocks.sort((a, b) {
-      // Y座標（上から下）を優先、次にX座標（左から右）
-      int yCompare = a.boundingBox.top.compareTo(b.boundingBox.top);
-      if (yCompare != 0) return yCompare;
-      return a.boundingBox.left.compareTo(b.boundingBox.left);
-    });
-    
-    for (TextBlock block in sortedBlocks) {
-      List<String> blockLines = [];
-      
-      // ライン単位で処理
-      List<TextLine> sortedLines = block.lines.toList();
-      sortedLines.sort((a, b) {
-        int yCompare = a.boundingBox.top.compareTo(b.boundingBox.top);
-        if (yCompare != 0) return yCompare;
-        return a.boundingBox.left.compareTo(b.boundingBox.left);
-      });
-      
-      for (TextLine line in sortedLines) {
-        String lineText = line.text.trim();
-        
-        // eFootball特有のOCR誤認識を修正
-        lineText = _correctEFootballOCRErrors(lineText);
-        
-        if (lineText.isNotEmpty) {
-          blockLines.add(lineText);
-        }
-      }
-      
-      if (blockLines.isNotEmpty) {
-        processedLines.addAll(blockLines);
-      }
-    }
-    
-    return processedLines.join('\n');
-  }
-
-  static String _correctEFootballOCRErrors(String text) {
-    // eFootballでよくあるOCR誤認識を修正
-    Map<String, String> corrections = {
-      // スコア関連
-      'l': '1', 'I': '1', '|': '1', 'O': '0', 'o': '0',
-      // 日時関連
-      'l0': '10', 'Il': '11', 'l2': '12', 'l3': '13', 'l4': '14', 'l5': '15',
-      'l6': '16', 'l7': '17', 'l8': '18', 'l9': '19', '2O': '20', '2l': '21',
-      // チーム名関連（よくある誤認識）
-      'FCパルセロナ': 'FC バルセロナ',
-      'ＦＣバルセロナ': 'FC バルセロナ',
-      'レアルマドリード': 'レアル・マドリード',
-      // ユーザー名関連
-      'hisa_racer': 'hisa_racer', // 正確に認識されている場合はそのまま
-      'visca-tzuyu': 'visca-tzuyu',
-    };
-    
-    String corrected = text;
-    
-    // 基本的な文字置換
-    for (var entry in corrections.entries) {
-      corrected = corrected.replaceAll(entry.key, entry.value);
-    }
-    
-    // スコアパターンの修正（l-1 -> 1-1 など）
-    corrected = RegExp(r'([lo])\s*[-–]\s*(\d+)').allMatches(corrected).fold(corrected, (str, match) {
-      return str.replaceAll(match.group(0)!, '1 - ${match.group(2)}');
-    });
-    
-    corrected = RegExp(r'(\d+)\s*[-–]\s*([lo])').allMatches(corrected).fold(corrected, (str, match) {
-      return str.replaceAll(match.group(0)!, '${match.group(1)} - 1');
-    });
-    
-    // 日時パターンの修正
-    corrected = RegExp(r'(\d{4})[/\\](\d{1,2})[/\\](\d{1,2})\s+(\d{1,2}):(\d{1,2})').allMatches(corrected).fold(corrected, (str, match) {
-      return str.replaceAll(match.group(0)!, '${match.group(1)}/${match.group(2)}/${match.group(3)} ${match.group(4)}:${match.group(5)}');
-    });
-    
-    return corrected;
-  }
-
+  
+  /// 複数画像のテキスト認識
   static Future<List<String>> recognizeMultipleImages(List<XFile> imageFiles) async {
-    List<String> results = [];
+    final List<String> results = [];
     
-    for (XFile imageFile in imageFiles) {
+    for (int i = 0; i < imageFiles.length; i++) {
       try {
-        final text = await recognizeTextFromXFile(imageFile);
+        debugPrint('画像 ${i + 1}/${imageFiles.length} を処理中...');
+        final text = await recognizeTextFromXFile(imageFiles[i]);
         results.add(text);
       } catch (e) {
-        debugPrint('画像の処理に失敗しました: ${imageFile.path} - $e');
-        results.add(''); // エラーの場合は空文字を追加
+        debugPrint('画像 ${i + 1} の処理でエラー: $e');
+        results.add('');
       }
     }
     
     return results;
   }
+  
+  /// 画像を処理してParsedMatchDataを返す
+  static Future<List<Map<String, dynamic>>> processImages(List<XFile> imageFiles, String userEfootballUsername) async {
+    try {
+      final ocrResults = await recognizeMultipleImages(imageFiles);
+      final allMatchData = <Map<String, dynamic>>[];
+      
+      for (int i = 0; i < ocrResults.length; i++) {
+        final ocrText = ocrResults[i];
+        if (ocrText.trim().isEmpty) continue;
+        
+        final parsedData = MatchParserService.parseMatchData(ocrText, userEfootballUsername);
+        allMatchData.addAll(parsedData);
+      }
+      
+      return allMatchData;
+    } catch (e) {
+      debugPrint('OCR処理エラー: $e');
+      throw Exception('OCR処理に失敗しました: $e');
+    }
+  }
 
-  static void dispose() {
-    _textRecognizer.close();
+  /// Web環境でのテキスト認識（フォールバック）
+  static Future<String> _recognizeTextWeb(XFile imageFile) async {
+    // Web環境ではGoogle ML Kitが制限されるため、フォールバック処理
+    print('Web環境でのOCR処理: ${imageFile.name}');
+    throw UnimplementedError('Web環境でのOCR機能は現在サポートされていません。モバイル版をご利用ください。');
+  }
+
+  /// eFootball特有のOCRエラー修正
+  static String _correctEFootballOCRErrors(String text) {
+    return text
+        .replaceAll('１', '1')
+        .replaceAll('２', '2')
+        .replaceAll('３', '3')
+        .replaceAll('４', '4')
+        .replaceAll('５', '5')
+        .replaceAll('６', '6')
+        .replaceAll('７', '7')
+        .replaceAll('８', '8')
+        .replaceAll('９', '9')
+        .replaceAll('０', '0')
+        .replaceAll('ー', '-')
+        .replaceAll('：', ':')
+        .replaceAll('／', '/')
+        .replaceAll('．', '.')
+        .replaceAll('，', ',');
+  }
+
+  /// eFootball用のテキスト前処理
+  static String _processEFootballText(RecognizedText recognizedText) {
+    final buffer = StringBuffer();
+    
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        String lineText = line.text;
+        
+        // eFootball特有のOCRエラーを修正
+        lineText = _correctEFootballOCRErrors(lineText);
+        
+        // 改行を追加
+        buffer.writeln(lineText);
+      }
+    }
+    
+    return buffer.toString();
   }
 }
