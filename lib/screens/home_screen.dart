@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildStatCard(
                           '勝率',
-                          '${(matchProvider.winRate * 100).toStringAsFixed(1)}%',
+                          '${matchProvider.winRate.toStringAsFixed(1)}%',
                           Icons.trending_up,
                           AppTheme.green,
                         ),
