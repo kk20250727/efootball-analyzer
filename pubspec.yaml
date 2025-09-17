@@ -1,5 +1,5 @@
 name: efootball_analyzer
-description: "A new Flutter project."
+description: "eFootball試合データ分析アプリ - OCRで試合結果を読み取り、詳細な統計分析とパフォーマンス向上をサポート"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
