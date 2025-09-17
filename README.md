@@ -1,6 +1,20 @@
 # eFootball Analyzer
 
-eFootballの戦績を分析するためのモバイルアプリです。OCR技術を使用してスクリーンショットから戦績データを自動読み取りし、多角的な分析を提供します。
+🚀 **リリース済み！** eFootballの戦績を分析するモバイル・Webアプリです。OCR技術を使用してスクリーンショットから戦績データを自動読み取りし、多角的な分析を提供します。
+
+## 🌐 Web版（すぐにお試し可能！）
+
+**[👉 Web版はこちら](https://kk20250727.github.io/efootball-analyzer/)**
+
+- デモアカウントでログイン: `demo@example.com` / `password`
+- サンプルデータテスト機能で全機能体験可能
+- OCR機能はモバイル版で利用可能
+
+## 📱 モバイル版（準備中）
+
+- **Android**: Google Play Store（申請準備中）
+- **iOS**: App Store（申請準備中）
+- 完全なOCR機能付き
 
 ## 機能
 
