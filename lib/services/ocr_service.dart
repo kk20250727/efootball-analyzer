@@ -24,6 +24,13 @@ class OCRService {
   
   static Future<String> recognizeTextFromXFile(XFile imageFile) async {
     try {
+      // Web環境での特別処理
+      if (kIsWeb) {
+        print('Web環境でのOCR処理開始');
+        return await _recognizeTextWeb(imageFile);
+      }
+      
+      // モバイル環境での通常処理
       final inputImage = InputImage.fromFilePath(imageFile.path);
       final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
       
@@ -46,8 +53,30 @@ class OCRService {
       
       return processedText;
     } catch (e) {
+      debugPrint('OCR処理エラー: $e');
+      if (kIsWeb) {
+        // Web環境では手動入力を促すメッセージを返す
+        throw Exception('Web環境ではOCR機能が制限されています。サンプルデータでテストするか、手動入力をご利用ください。');
+      }
       throw Exception('OCR処理に失敗しました: $e');
     }
+  }
+
+  static Future<String> _recognizeTextWeb(XFile imageFile) async {
+    // Web環境では現在OCRが利用できないため、
+    // 代替案として手動入力またはサンプルデータを提案
+    print('Web環境ではGoogle ML Kitが動作しません');
+    print('画像ファイル: ${imageFile.name}');
+    
+    // 実際のWeb OCR実装は今後追加予定
+    // 現在は制限を明示してユーザーに代替手段を提案
+    throw Exception(
+      'Web環境ではOCR機能が制限されています。\n\n'
+      '代替手段：\n'
+      '• 「サンプルデータでテスト」ボタンをお試しください\n'
+      '• モバイルアプリ版をご利用ください\n'
+      '• 手動入力機能（今後実装予定）'
+    );
   }
 
   static String _processEFootballText(RecognizedText recognizedText) {

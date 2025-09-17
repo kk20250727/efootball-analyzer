@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -215,10 +216,18 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '1. eFootballの「Match History」画面のスクリーンショットを撮影\n'
-                          '2. 「画像を選択」ボタンで画像をアップロード\n'
-                          '3. 「OCR処理開始」ボタンで試合データを読み取り\n'
-                          '4. 検出されたデータを確認・編集',
+                          kIsWeb 
+                            ? '⚠️ Web環境では画像OCR機能が制限されています。\n'
+                              '「サンプルデータでテスト」をお試しいただくか、\n'
+                              'モバイルアプリ版をご利用ください。\n\n'
+                              '1. eFootballの「Match History」画面のスクリーンショットを撮影\n'
+                              '2. 「画像を選択」ボタンで画像をアップロード\n'
+                              '3. 「OCR処理開始」ボタンで試合データを読み取り\n'
+                              '4. 検出されたデータを確認・編集'
+                            : '1. eFootballの「Match History」画面のスクリーンショットを撮影\n'
+                              '2. 「画像を選択」ボタンで画像をアップロード\n'
+                              '3. 「OCR処理開始」ボタンで試合データを読み取り\n'
+                              '4. 検出されたデータを確認・編集',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.veryLightGray,
