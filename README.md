@@ -4,7 +4,9 @@
 
 ## 🌐 Web版（すぐにお試し可能！）
 
-**[👉 Web版はこちら](https://kk20250727.github.io/efootball-analyzer/)**
+**[👉 Web版はこちら](https://efootball-analyzer.netlify.app/)**
+
+🔗 **代替URL**: [GitHub Pages版](https://kk20250727.github.io/efootball-analyzer/)
 
 - デモアカウントでログイン: `demo@example.com` / `password`
 - サンプルデータテスト機能で全機能体験可能

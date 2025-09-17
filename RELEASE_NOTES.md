@@ -3,8 +3,10 @@
 ## 🎉 v1.0.0 - 初回リリース完了！ (2025年9月17日)
 
 ### 🌐 Web版公開
-- **URL**: [https://kk20250727.github.io/efootball-analyzer/](https://kk20250727.github.io/efootball-analyzer/)
+- **メインURL**: [https://efootball-analyzer.netlify.app/](https://efootball-analyzer.netlify.app/)
+- **代替URL**: [https://kk20250727.github.io/efootball-analyzer/](https://kk20250727.github.io/efootball-analyzer/)
 - **ステータス**: ✅ 公開済み・動作確認済み
+- **ホスティング**: Netlify (メイン) + GitHub Pages (バックアップ)
 
 ### ✨ 実装完了機能
 
