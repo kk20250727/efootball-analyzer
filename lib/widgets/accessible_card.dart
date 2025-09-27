@@ -186,7 +186,6 @@ class StatusMessage extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      announcement: message,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

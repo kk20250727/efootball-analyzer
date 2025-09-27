@@ -67,7 +67,9 @@ class _MatchUploadScreenState extends State<MatchUploadScreen> {
       if (matchingUsernames.isEmpty) {
         // ユーザー名が一致しない場合、選択画面を表示
         if (mounted) {
-          _showUsernameSelectionDialog(parsedMatches, combinedText, usernames);
+          final convertedMatches = parsedMatches.map((data) => 
+              ParsedMatchData.fromMap(data as Map<String, dynamic>, authProvider.user?.efootballUsername ?? '')).toList();
+          _showUsernameSelectionDialog(convertedMatches, combinedText, usernames);
         }
       } else {
         // データ確認画面へ

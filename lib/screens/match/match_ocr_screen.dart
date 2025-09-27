@@ -19,8 +19,9 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
   bool _isProcessing = false;
   String? _statusMessage;
   List<XFile> _selectedImages = [];
-  double _processingProgress = 0.0;
-  int _currentImageIndex = 0;
+  // TODO: 次のアップデートでプログレス表示機能を実装
+  // double _processingProgress = 0.0;
+  // int _currentImageIndex = 0;
 
   Future<void> _selectImages() async {
     try {
@@ -46,8 +47,8 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
 
     setState(() {
       _isProcessing = true;
-      _processingProgress = 0.0;
-      _currentImageIndex = 0;
+      // _processingProgress = 0.0;
+      // _currentImageIndex = 0;
       _statusMessage = 'OCR処理を開始しています...';
     });
 
@@ -71,12 +72,10 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
         _statusMessage = '${_selectedImages.length}枚の画像を解析中...';
       });
 
-      // OCR処理（プログレス付き）
+      // OCR処理
       final ocrTexts = <String>[];
       for (int i = 0; i < _selectedImages.length; i++) {
         setState(() {
-          _currentImageIndex = i + 1;
-          _processingProgress = (i + 1) / _selectedImages.length;
           _statusMessage = '画像 ${i + 1}/${_selectedImages.length} を処理中...';
         });
         
@@ -117,7 +116,8 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
           continue;
         }
 
-        final matchData = MatchParserService.parseMatchData(ocrText, userUsername);
+        final matchDataRaw = MatchParserService.parseMatchData(ocrText, userUsername);
+        final matchData = matchDataRaw.map((data) => ParsedMatchData.fromMap(data, userUsername)).toList();
         allMatchData.addAll(matchData);
         
         debugPrint('画像 ${i + 1}から${matchData.length}件の試合データを抽出');
@@ -175,7 +175,7 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       if (mounted) {
         context.push('/match/confirm', extra: {
           'matchData': allMatchData,
-          'ocrText': allRawText.join('\n\n=== 次の画像 ===\n\n'),
+          'ocrText': ocrTexts.join('\n\n=== 次の画像 ===\n\n'),
         });
       }
     } catch (e) {
@@ -200,8 +200,8 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       setState(() {
         _statusMessage = userFriendlyMessage;
         _isProcessing = false;
-        _processingProgress = 0.0;
-        _currentImageIndex = 0;
+        // _processingProgress = 0.0;
+        // _currentImageIndex = 0;
       });
     }
   }

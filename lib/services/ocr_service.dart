@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -209,18 +208,18 @@ class OCRService {
       '＊': '*', '＋': '+', '＝': '=', '＜': '<', '＞': '>'
     };
     
-    // 一般的なOCR誤認識パターン修正
-    final ocrErrorMap = {
-      // 数字の誤認識
-      'O': '0', 'o': '0', 'l': '1', 'I': '1', 'S': '5', 's': '5',
-      'G': '6', 'B': '8', 'g': '9', 'q': '9',
-      
-      // アルファベットの誤認識
-      '8': 'B', '0': 'O', '1': 'I', '5': 'S', '6': 'G',
-      
-      // 特殊文字の誤認識
-      '|': 'l', '\\': '/', '"': '"', "'": "'",
-    };
+    // 一般的なOCR誤認識パターン修正（今後の拡張用に保持）
+    // final ocrErrorMap = {
+    //   // 数字の誤認識
+    //   'O': '0', 'o': '0', 'l': '1', 'I': '1', 'S': '5', 's': '5',
+    //   'G': '6', 'B': '8', 'g': '9', 'q': '9',
+    //   
+    //   // アルファベットの誤認識
+    //   '8': 'B', '0': 'O', '1': 'I', '5': 'S', '6': 'G',
+    //   
+    //   // 特殊文字の誤認識
+    //   '|': 'l', '\\': '/', '"': '"', "'": "'",
+    // };
     
     // eFootball特有の誤認識パターン
     final efootballSpecificMap = {

@@ -58,8 +58,8 @@ class _MatchConfirmScreenState extends State<MatchConfirmScreen> {
     try {
       for (final parsedMatch in _matches) {
         final result = MatchParserService.determineResult(
-          parsedMatch,
-          user.efootballUsername,
+          parsedMatch.myScore,
+          parsedMatch.opponentScore,
         );
 
         final match = MatchData(
@@ -72,7 +72,7 @@ class _MatchConfirmScreenState extends State<MatchConfirmScreen> {
           myScore: parsedMatch.myScore,
           opponentScore: parsedMatch.opponentScore,
           result: result,
-          matchDate: parsedMatch.matchDate,
+          matchDate: parsedMatch.matchDate ?? DateTime.now(),
           squadId: _selectedSquadId,
           createdAt: DateTime.now(),
         );
@@ -216,7 +216,7 @@ class _MatchConfirmScreenState extends State<MatchConfirmScreen> {
                               ),
                               const Spacer(),
                               Text(
-                                '${match.matchDate.month}/${match.matchDate.day} ${match.matchDate.hour}:${match.matchDate.minute.toString().padLeft(2, '0')}',
+                                '${match.matchDate?.month ?? DateTime.now().month}/${match.matchDate?.day ?? DateTime.now().day} ${match.matchDate?.hour ?? DateTime.now().hour}:${(match.matchDate?.minute ?? DateTime.now().minute).toString().padLeft(2, '0')}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppTheme.lightGray,
                                 ),
@@ -395,13 +395,19 @@ class _MatchConfirmScreenState extends State<MatchConfirmScreen> {
           ElevatedButton(
             onPressed: () {
               final updatedMatch = ParsedMatchData(
-                myTeamName: myTeamController.text,
-                opponentTeamName: opponentTeamController.text,
-                myUsername: match.myUsername,
-                opponentUsername: match.opponentUsername,
-                myScore: int.tryParse(myScoreController.text) ?? match.myScore,
-                opponentScore: int.tryParse(opponentScoreController.text) ?? match.opponentScore,
+                homeTeam: match.isUserHome ? myTeamController.text : opponentTeamController.text,
+                awayTeam: match.isUserHome ? opponentTeamController.text : myTeamController.text,
+                homeScore: match.isUserHome 
+                    ? (int.tryParse(myScoreController.text) ?? match.myScore)
+                    : (int.tryParse(opponentScoreController.text) ?? match.opponentScore),
+                awayScore: match.isUserHome 
+                    ? (int.tryParse(opponentScoreController.text) ?? match.opponentScore)
+                    : (int.tryParse(myScoreController.text) ?? match.myScore),
+                homeUsername: match.isUserHome ? match.myUsername : match.opponentUsername,
+                awayUsername: match.isUserHome ? match.opponentUsername : match.myUsername,
                 matchDate: match.matchDate,
+                result: match.result,
+                isUserHome: match.isUserHome,
               );
               _updateMatch(index, updatedMatch);
               Navigator.of(context).pop();

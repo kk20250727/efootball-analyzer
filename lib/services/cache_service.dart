@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/match_result.dart';
 
 /// キャッシュサービス - パフォーマンス向上のためのデータキャッシュ
 class CacheService {
@@ -263,7 +262,7 @@ class CacheService {
         }
       }
       
-      debugPrint('キャッシュ最適化完了: ${deletedCount}件削除');
+        debugPrint('キャッシュ最適化完了: $deletedCount件削除');
       await _prefs!.setInt(_lastCacheUpdateKey, now.millisecondsSinceEpoch);
     } catch (e) {
       debugPrint('キャッシュ最適化エラー: $e');
