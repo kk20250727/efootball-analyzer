@@ -211,4 +211,76 @@ class AppTheme {
       colors: [primaryBlack, darkGray],
     );
   }
+
+  // レスポンシブデザイン用のブレイクポイント
+  static const double mobileBreakpoint = 600;
+  static const double tabletBreakpoint = 1024;
+  static const double desktopBreakpoint = 1440;
+
+  // レスポンシブなパディングとマージン
+  static EdgeInsets responsivePadding(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < mobileBreakpoint) {
+      return const EdgeInsets.all(16.0);
+    } else if (screenWidth < tabletBreakpoint) {
+      return const EdgeInsets.all(24.0);
+    } else {
+      return const EdgeInsets.all(32.0);
+    }
+  }
+
+  static EdgeInsets responsiveMargin(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < mobileBreakpoint) {
+      return const EdgeInsets.symmetric(horizontal: 8.0);
+    } else if (screenWidth < tabletBreakpoint) {
+      return const EdgeInsets.symmetric(horizontal: 16.0);
+    } else {
+      return const EdgeInsets.symmetric(horizontal: 24.0);
+    }
+  }
+
+  // レスポンシブなフォントサイズ
+  static double responsiveFontSize(BuildContext context, double baseFontSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < mobileBreakpoint) {
+      return baseFontSize;
+    } else if (screenWidth < tabletBreakpoint) {
+      return baseFontSize * 1.1;
+    } else {
+      return baseFontSize * 1.2;
+    }
+  }
+
+  // アクセシビリティ対応のカラーコントラスト改善
+  static Color accessibleTextColor(Color backgroundColor) {
+    final luminance = backgroundColor.computeLuminance();
+    return luminance > 0.5 ? darkGray : white;
+  }
+
+  // デバイス種別の判定
+  static bool isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < mobileBreakpoint;
+  }
+
+  static bool isTablet(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= mobileBreakpoint && width < tabletBreakpoint;
+  }
+
+  static bool isDesktop(BuildContext context) {
+    return MediaQuery.of(context).size.width >= tabletBreakpoint;
+  }
+
+  // レスポンシブなレイアウト設定
+  static int getResponsiveColumns(BuildContext context, {int mobile = 1, int tablet = 2, int desktop = 3}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth < mobileBreakpoint) {
+      return mobile;
+    } else if (screenWidth < tabletBreakpoint) {
+      return tablet;
+    } else {
+      return desktop;
+    }
+  }
 }

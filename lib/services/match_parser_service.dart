@@ -25,6 +25,14 @@ class ParsedMatchData {
     required this.isUserHome,
   });
 
+  // 後方互換性のためのゲッター
+  String get myTeamName => isUserHome ? homeTeam : awayTeam;
+  String get opponentTeamName => isUserHome ? awayTeam : homeTeam;
+  String get myUsername => isUserHome ? homeUsername : awayUsername;
+  String get opponentUsername => isUserHome ? awayUsername : homeUsername;
+  int get myScore => isUserHome ? homeScore : awayScore;
+  int get opponentScore => isUserHome ? awayScore : homeScore;
+
   /// MapからParsedMatchDataを作成
   factory ParsedMatchData.fromMap(Map<String, dynamic> map, String userEfootballUsername) {
     final homeUsername = map['homeUsername'] as String;
@@ -115,6 +123,23 @@ class MatchParserService {
     return usernames.toSet().toList();
   }
 
+  /// 結果判定メソッド（後方互換性）
+  static MatchResult determineResult(int myScore, int opponentScore) {
+    if (myScore > opponentScore) {
+      return MatchResult.win;
+    } else if (myScore < opponentScore) {
+      return MatchResult.loss;
+    } else {
+      return MatchResult.draw;
+    }
+  }
+
+  /// 試合結果を解析（ParsedMatchDataのリストを返す）
+  static List<ParsedMatchData> parseMatchResults(String text, String userEfootballUsername) {
+    final matchDataList = parseMatchData(text, userEfootballUsername);
+    return matchDataList.map((data) => ParsedMatchData.fromMap(data, userEfootballUsername)).toList();
+  }
+
   /// eFootball形式の試合データを解析
   static List<Map<String, dynamic>> parseMatchData(String text, String userEfootballUsername) {
     debugPrint('=== 試合データ解析開始 ===');
@@ -134,8 +159,13 @@ class MatchParserService {
         
         final matchData = _parseMatchBlock(block, userEfootballUsername);
         if (matchData != null) {
-          matches.add(matchData);
-          debugPrint('試合データ解析成功: $matchData');
+          // データの妥当性をチェック
+          if (_isValidMatchData(matchData)) {
+            matches.add(matchData);
+            debugPrint('試合データ解析成功: $matchData');
+          } else {
+            debugPrint('試合データが無効のためスキップ: $matchData');
+          }
         }
       }
       
@@ -300,26 +330,132 @@ class MatchParserService {
     return null;
   }
 
-  /// 有効なeFootballユーザー名かチェック
+  /// 有効なeFootballユーザー名かチェック（強化版）
   static bool _isValidEFootballUsername(String username) {
-    // eFootballユーザー名の基本ルール
+    // 基本的な長さチェック
     if (username.length < 3 || username.length > 16) return false;
     
     // 英数字とアンダースコア、ハイフンのみ許可
     if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(username)) return false;
     
-    // システムテキストを除外
+    // システムテキストを除外（拡張版）
     final systemTexts = [
+      // 基本ゲーム用語
       'score', 'time', 'match', 'game', 'player', 'team',
       'home', 'away', 'goal', 'result', 'date', 'win', 'lose',
-      'draw', 'vs', 'div', 'rank', 'level', 'point', 'rating'
+      'draw', 'vs', 'div', 'rank', 'level', 'point', 'rating',
+      
+      // eFootball特有用語
+      'efootball', 'pes', 'myclub', 'legend', 'featured',
+      'potw', 'im', 'base', 'maxed', 'lv', 'ovr', 'stats',
+      
+      // UI要素
+      'menu', 'settings', 'options', 'back', 'next', 'confirm',
+      'cancel', 'ok', 'yes', 'no', 'start', 'finish', 'exit',
+      
+      // 数値・記号
+      'null', 'none', 'empty', 'unknown', 'default', 'test',
+      
+      // 一般的な除外対象
+      'admin', 'system', 'user', 'guest', 'temp', 'demo'
     ];
     
     final lowerUsername = username.toLowerCase();
+    
+    // システムテキストとの完全一致チェック
+    if (systemTexts.contains(lowerUsername)) return false;
+    
+    // システムテキストを含むかチェック
     for (final systemText in systemTexts) {
       if (lowerUsername.contains(systemText)) return false;
     }
     
+    // 数字のみは無効
+    if (RegExp(r'^\d+$').hasMatch(username)) return false;
+    
+    // アンダースコアやハイフンのみは無効
+    if (RegExp(r'^[_-]+$').hasMatch(username)) return false;
+    
+    // 連続する同じ文字が多すぎる場合は無効（例: "aaaa", "1111"）
+    if (RegExp(r'(.)\1{3,}').hasMatch(username)) return false;
+    
+    // 英文字が含まれているかチェック（純粋な数字列を避ける）
+    if (!RegExp(r'[a-zA-Z]').hasMatch(username)) return false;
+    
     return true;
+  }
+  
+  /// 試合データの妥当性をチェック
+  static bool _isValidMatchData(Map<String, dynamic> matchData) {
+    try {
+      // 必須フィールドの存在チェック
+      final requiredFields = ['homeScore', 'awayScore', 'homeUsername', 'awayUsername'];
+      for (final field in requiredFields) {
+        if (!matchData.containsKey(field) || matchData[field] == null) {
+          debugPrint('必須フィールドが不足: $field');
+          return false;
+        }
+      }
+      
+      // スコアの妥当性チェック
+      final homeScore = matchData['homeScore'];
+      final awayScore = matchData['awayScore'];
+      
+      if (homeScore is! int || awayScore is! int) {
+        debugPrint('スコアが整数ではありません: home=$homeScore, away=$awayScore');
+        return false;
+      }
+      
+      if (homeScore < 0 || awayScore < 0) {
+        debugPrint('スコアが負の数です: home=$homeScore, away=$awayScore');
+        return false;
+      }
+      
+      // eFootball の現実的なスコア範囲チェック（0-20点）
+      if (homeScore > 20 || awayScore > 20) {
+        debugPrint('スコアが現実的ではありません: home=$homeScore, away=$awayScore');
+        return false;
+      }
+      
+      // ユーザー名の妥当性チェック
+      final homeUsername = matchData['homeUsername'] as String;
+      final awayUsername = matchData['awayUsername'] as String;
+      
+      if (!_isValidEFootballUsername(homeUsername)) {
+        debugPrint('無効なホームユーザー名: $homeUsername');
+        return false;
+      }
+      
+      if (!_isValidEFootballUsername(awayUsername)) {
+        debugPrint('無効なアウェイユーザー名: $awayUsername');
+        return false;
+      }
+      
+      // 同じユーザー名での試合は無効
+      if (homeUsername == awayUsername) {
+        debugPrint('同じユーザー名での試合: $homeUsername');
+        return false;
+      }
+      
+      // 日時の妥当性チェック
+      if (matchData.containsKey('matchDate') && matchData['matchDate'] != null) {
+        final matchDate = matchData['matchDate'];
+        if (matchDate is DateTime) {
+          final now = DateTime.now();
+          final oneYearAgo = now.subtract(const Duration(days: 365));
+          final oneWeekFromNow = now.add(const Duration(days: 7));
+          
+          if (matchDate.isBefore(oneYearAgo) || matchDate.isAfter(oneWeekFromNow)) {
+            debugPrint('試合日時が現実的ではありません: $matchDate');
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    } catch (e) {
+      debugPrint('試合データ妥当性チェックエラー: $e');
+      return false;
+    }
   }
 }

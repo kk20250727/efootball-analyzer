@@ -19,6 +19,8 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
   bool _isProcessing = false;
   String? _statusMessage;
   List<XFile> _selectedImages = [];
+  double _processingProgress = 0.0;
+  int _currentImageIndex = 0;
 
   Future<void> _selectImages() async {
     try {
@@ -44,7 +46,9 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
 
     setState(() {
       _isProcessing = true;
-      _statusMessage = 'OCR処理中...';
+      _processingProgress = 0.0;
+      _currentImageIndex = 0;
+      _statusMessage = 'OCR処理を開始しています...';
     });
 
     try {
@@ -67,8 +71,18 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
         _statusMessage = '${_selectedImages.length}枚の画像を解析中...';
       });
 
-      // OCR処理
-      final ocrTexts = await OCRService.recognizeMultipleImages(_selectedImages);
+      // OCR処理（プログレス付き）
+      final ocrTexts = <String>[];
+      for (int i = 0; i < _selectedImages.length; i++) {
+        setState(() {
+          _currentImageIndex = i + 1;
+          _processingProgress = (i + 1) / _selectedImages.length;
+          _statusMessage = '画像 ${i + 1}/${_selectedImages.length} を処理中...';
+        });
+        
+        final text = await OCRService.recognizeTextFromXFile(_selectedImages[i]);
+        ocrTexts.add(text);
+      }
       
       // OCR結果をコンソールとUIに表示
       print('=== OCR処理完了 ===');
@@ -166,9 +180,28 @@ class _MatchOCRScreenState extends State<MatchOCRScreen> {
       }
     } catch (e) {
       debugPrint('OCR処理エラー: $e');
+      
+      String userFriendlyMessage;
+      
+      if (e.toString().contains('画像ファイルが選択されていません')) {
+        userFriendlyMessage = '❌ 画像を選択してから処理を開始してください';
+      } else if (e.toString().contains('ファイルサイズが10MBを超えています')) {
+        userFriendlyMessage = '📏 ファイルサイズが大きすぎます\n（10MB以下にしてください）';
+      } else if (e.toString().contains('サポートされていないファイル形式')) {
+        userFriendlyMessage = '📸 JPGまたはPNG形式の画像を選択してください';
+      } else if (e.toString().contains('すべての画像でOCR処理に失敗')) {
+        userFriendlyMessage = '🔍 画像からテキストを読み取れませんでした\n\n💡 改善のヒント:\n• 画像の解像度を上げてください\n• 文字がはっきり見える画像を使用してください\n• 照明が良い環境で撮影してください';
+      } else if (e.toString().contains('Web環境でのOCR機能は現在サポートされていません')) {
+        userFriendlyMessage = '📱 OCR機能はモバイル版でのみ利用可能です\n\nWeb版では手動でのデータ入力をご利用ください';
+      } else {
+        userFriendlyMessage = '⚠️ OCR処理中にエラーが発生しました\n\n💡 解決方法:\n• 画像の品質を確認してください\n• 別の画像で再試行してください\n• アプリを再起動してみてください';
+      }
+      
       setState(() {
-        _statusMessage = 'OCR処理エラー: $e\n\n画像の品質を確認するか、別の画像を試してください。';
+        _statusMessage = userFriendlyMessage;
         _isProcessing = false;
+        _processingProgress = 0.0;
+        _currentImageIndex = 0;
       });
     }
   }
