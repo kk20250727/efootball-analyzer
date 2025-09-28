@@ -246,6 +246,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         AppTheme.yellow,
                         () => context.push('/opponent-upload'),
                       ),
+                      _buildActionCard(
+                        'アプリ状態',
+                        Icons.info,
+                        AppTheme.purple,
+                        () => context.push('/app-status'),
+                      ),
+                      if (Theme.of(context).platform == TargetPlatform.iOS) 
+                        _buildActionCard(
+                          'iOS機能テスト',
+                          Icons.phone_iphone,
+                          AppTheme.lightCyan,
+                          () => context.push('/ios-test'),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 24),

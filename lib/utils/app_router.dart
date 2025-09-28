@@ -13,6 +13,8 @@ import '../screens/squad/squad_list_screen.dart';
 import '../screens/squad/squad_edit_screen.dart';
 import '../screens/squad/squad_detail_screen.dart';
 import '../screens/analysis/analysis_screen.dart';
+import '../screens/test/ios_test_screen.dart';
+import '../screens/app_status_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -121,6 +123,14 @@ class AppRouter {
       GoRoute(
         path: '/analysis',
         builder: (context, state) => const AnalysisScreen(),
+      ),
+      GoRoute(
+        path: '/ios-test',
+        builder: (context, state) => const IOSTestScreen(),
+      ),
+      GoRoute(
+        path: '/app-status',
+        builder: (context, state) => const AppStatusScreen(),
       ),
     ],
   );

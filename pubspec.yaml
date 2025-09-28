@@ -62,6 +62,9 @@ dependencies:
   
   # Cryptography
   crypto: ^3.0.5
+  
+  # App info
+  package_info_plus: ^8.1.0
 
 dev_dependencies:
   flutter_test:
