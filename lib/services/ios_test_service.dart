@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'performance_service.dart';
 import 'cache_service.dart';
-import 'ocr_service.dart';
 
 /// iOS版テストサービス - 実機とシミュレーターでの機能検証
 class IOSTestService {

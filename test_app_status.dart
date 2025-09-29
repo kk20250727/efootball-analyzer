@@ -93,8 +93,9 @@ Future<void> checkBuildStatus() async {
   ];
   
   for (final file in buildFiles) {
-    final exists = await (File(file).exists().catchError((_) => false) ||
-                         Directory(file).exists().catchError((_) => false));
+    final fileExists = await File(file).exists().catchError((_) => false);
+    final dirExists = await Directory(file).exists().catchError((_) => false);
+    final exists = fileExists || dirExists;
     print('  ${exists ? "✅" : "❌"} $file');
   }
   print('');
